@@ -78,7 +78,7 @@ func (m Middleware) EchoMiddleware() echo.MiddlewareFunc {
 		LogURI:        true,
 		LogStatus:     true,
 		LogError:      true,
-		HandleError:   true,
+		HandleError:   false,
 		LogValuesFunc: m.logValuesFunc,
 	}
 
