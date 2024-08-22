@@ -41,4 +41,6 @@ func main() {
 
 
 ## License notices
+MIT License. Copyright (c) 2024 Star Stable Entertainment AB
+
 Parts of this code was forked and/or inspired by https://github.com/samber/slog-echo ( MIT License. Copyright (c) 2023 Samuel Berthe )
