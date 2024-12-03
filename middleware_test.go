@@ -69,6 +69,23 @@ func TestMiddlewareError(t *testing.T) {
 	assert.Contains(t, logbuffer.String(), "level=ERROR msg=REQUEST request.method=POST request.uri=\"https://example.com/hej/ho?foo=bah\" response.status=500 response.error=\"code=500, message=Internal Server Error, internal=A simulated internal error\"")
 }
 
+func TestMiddleware400Error(t *testing.T) {
+	req := httptest.NewRequest("POST", "https://example.com/hej/ho?foo=bah", bytes.NewBufferString("blahblah"))
+	resp := httptest.NewRecorder()
+
+	logmiddleware, logbuffer := mockedMiddleware(t)
+
+	err := logmiddleware(func(ctx echo.Context) error {
+		return echo.NewHTTPError(400).WithInternal(errors.New("A simulated internal error"))
+	})(echo.New().NewContext(req, resp))
+
+	if assert.NotNil(t, err) {
+		assert.ErrorContains(t, err, "Bad Request")
+	}
+
+	assert.Contains(t, logbuffer.String(), "level=WARN msg=REQUEST request.method=POST request.uri=\"https://example.com/hej/ho?foo=bah\" response.status=400 response.error=\"code=400, message=Bad Request, internal=A simulated internal error\"")
+}
+
 func TestMiddlewareFilterHealthcheck(t *testing.T) {
 	logmiddleware, logbuffer := mockedMiddleware(t, func(m Middleware) Middleware {
 		return m.WithFilter(IgnorePath("/healthcheck"))

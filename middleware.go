@@ -48,8 +48,10 @@ func (m Middleware) logValuesFunc(c echo.Context, v middleware.RequestLoggerValu
 	if v.Error != nil {
 		responseAttrs = append(responseAttrs, slog.Any("error", v.Error))
 	}
-	if v.Error != nil || v.Status >= 500 {
+	if v.Status >= 500 {
 		slogLevel = slog.LevelError
+	} else if v.Status >= 400 {
+		slogLevel = slog.LevelWarn
 	}
 	extraAttrs := []slog.Attr{}
 	for _, f := range m.extraAttrFuncs {
