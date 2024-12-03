@@ -1,6 +1,7 @@
 package slogecho
 
 import (
+	"errors"
 	"log/slog"
 
 	"github.com/labstack/echo/v4"
@@ -48,7 +49,14 @@ func (m Middleware) logValuesFunc(c echo.Context, v middleware.RequestLoggerValu
 	if v.Error != nil {
 		responseAttrs = append(responseAttrs, slog.Any("error", v.Error))
 	}
-	if v.Error != nil || v.Status >= 500 {
+	var httpErr *echo.HTTPError
+	if v.Error != nil && errors.As(v.Error, &httpErr) {
+		if httpErr.Code >= 500 {
+			slogLevel = slog.LevelError
+		} else if httpErr.Code >= 400 {
+			slogLevel = slog.LevelWarn
+		}
+	} else if v.Error != nil || v.Status >= 500 {
 		slogLevel = slog.LevelError
 	}
 	extraAttrs := []slog.Attr{}
