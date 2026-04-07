@@ -3,20 +3,20 @@ package slogecho
 import (
 	"log/slog"
 
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
 )
 
 type requestLoggerConfigModifier func(*middleware.RequestLoggerConfig)
 
 type Middleware struct {
 	logger                       *slog.Logger
-	extraAttrFuncs               [](func(echo.Context) []slog.Attr)
+	extraAttrFuncs               [](func(*echo.Context) []slog.Attr)
 	requestLoggerConfigModifiers []requestLoggerConfigModifier
 	filters                      []Filter
 }
 
-func (m Middleware) WithExtraAttrFunc(f func(echo.Context) []slog.Attr) Middleware {
+func (m Middleware) WithExtraAttrFunc(f func(*echo.Context) []slog.Attr) Middleware {
 	m.extraAttrFuncs = append(m.extraAttrFuncs, f)
 	return m
 }
@@ -31,7 +31,7 @@ func (m Middleware) WithFilter(filters ...Filter) Middleware {
 	return m
 }
 
-func (m Middleware) logValuesFunc(c echo.Context, v middleware.RequestLoggerValues) error {
+func (m Middleware) logValuesFunc(c *echo.Context, v middleware.RequestLoggerValues) error {
 	for _, filter := range m.filters {
 		if !filter(c) {
 			return nil
@@ -79,7 +79,6 @@ func (m Middleware) EchoMiddleware() echo.MiddlewareFunc {
 		LogMethod:     true,
 		LogURI:        true,
 		LogStatus:     true,
-		LogError:      true,
 		HandleError:   false,
 		LogValuesFunc: m.logValuesFunc,
 	}
