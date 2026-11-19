@@ -45,9 +45,6 @@ func (m Middleware) logValuesFunc(c *echo.Context, v middleware.RequestLoggerVal
 	responseAttrs := []slog.Attr{
 		slog.Int("status", v.Status),
 	}
-	if v.Error != nil {
-		responseAttrs = append(responseAttrs, slog.Any("error", v.Error))
-	}
 	if v.Status >= 500 {
 		slogLevel = slog.LevelError
 	} else if v.Status >= 400 {
@@ -57,19 +54,21 @@ func (m Middleware) logValuesFunc(c *echo.Context, v middleware.RequestLoggerVal
 	for _, f := range m.extraAttrFuncs {
 		extraAttrs = append(extraAttrs, f(c)...)
 	}
-	attrs := append(
-		[]slog.Attr{
-			{
-				Key:   "request",
-				Value: slog.GroupValue(requestAttrs...),
-			},
-			{
-				Key:   "response",
-				Value: slog.GroupValue(responseAttrs...),
-			},
+	attrs := []slog.Attr{
+		{
+			Key:   "request",
+			Value: slog.GroupValue(requestAttrs...),
 		},
-		extraAttrs...,
-	)
+		{
+			Key:   "response",
+			Value: slog.GroupValue(responseAttrs...),
+		},
+	}
+	// top-level "error" is the slog convention, which error-reporting handlers (e.g. Sentry) look for
+	if v.Error != nil {
+		attrs = append(attrs, slog.Any("error", v.Error))
+	}
+	attrs = append(attrs, extraAttrs...)
 	m.logger.LogAttrs(c.Request().Context(), slogLevel, "REQUEST", attrs...)
 	return nil
 }
